@@ -2,22 +2,20 @@
 
 enum Status {
   STATUS_IDLE = 0,
-  STATUS_TYPING = 1,
-  STATUS_LISTENING = 2,
-  STATUS_PROCESSING = 3
+  STATUS_LISTENING = 1,
+  STATUS_PROCESSING = 2
 };
 
 Status currentStatus = STATUS_IDLE;
 
 const char* statusTexts[] = {
-  "Waiting for command",
-  "Typing...",
-  "Listening...",
-  "Processing..."
+  "Waiting",
+  "Listening",
+  "Running"
 };
 
 const uint16_t statusColors[] = {
-  0x07E0, 0x001F, 0xF800, 0xFBE0
+  0x07E0, 0x001F, 0xF800
 };
 
 unsigned long lastBlinkTime = 0;
@@ -65,20 +63,19 @@ void setup() {
 void loop() {
   M5.update();
   if (M5.BtnA.wasClicked()) {
-    currentStatus = (Status)((currentStatus + 1) % 4);
+    currentStatus = (Status)((currentStatus + 1) % 3);
     drawUI();
   }
   if (Serial.available() > 0) {
     char cmd = Serial.read();
     switch(cmd) {
       case '0': currentStatus = STATUS_IDLE; break;
-      case '1': currentStatus = STATUS_TYPING; break;
-      case '2': currentStatus = STATUS_LISTENING; break;
-      case '3': currentStatus = STATUS_PROCESSING; break;
+      case '1': currentStatus = STATUS_LISTENING; break;
+      case '2': currentStatus = STATUS_PROCESSING; break;
     }
     drawUI();
   }
-  if (currentStatus == STATUS_TYPING || currentStatus == STATUS_LISTENING) {
+  if (currentStatus == STATUS_LISTENING && dotVisible) {
     if (millis() - lastBlinkTime >= blinkInterval) {
       lastBlinkTime = millis();
       dotVisible = !dotVisible;
@@ -118,12 +115,16 @@ void drawLogo(int x, int y, int size) {
 }
 
 void drawStatusText() {
-  M5.Display.fillRect(0, 175, 170, 30, 0x0000);
-  M5.Display.setTextSize(1);
+  M5.Display.fillRect(0, 160, 170, 50, 0x0000);
+  M5.Display.setTextSize(2);
   M5.Display.setTextColor(statusColors[currentStatus]);
-  M5.Display.setCursor(15, 180);
-  M5.Display.print(statusTexts[currentStatus]);
-  if ((currentStatus == STATUS_TYPING || currentStatus == STATUS_LISTENING) && dotVisible) {
+  const char* text = statusTexts[currentStatus];
+  int textWidth = M5.Display.textWidth(text);
+  int x = (170 - textWidth) / 2 - 25;
+  if (x < 0) x = 0;
+  M5.Display.setCursor(x, 170);
+  M5.Display.print(text);
+  if ((currentStatus == STATUS_LISTENING) && dotVisible) {
     M5.Display.print(".");
   }
 }
