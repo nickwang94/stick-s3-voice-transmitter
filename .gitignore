@@ -1,0 +1,22 @@
+# Arduino build output
+*.o
+*.d
+*.elf
+*.bin
+*.bin.part
+*.bootloader
+*.partitions
+*.map
+build/
+dist/
+
+# Arduino IDE
+/.idea/
+.vscode/
+*.iml
+
+# macOS
+.DS_Store
+
+# Serial logs
+*.log
