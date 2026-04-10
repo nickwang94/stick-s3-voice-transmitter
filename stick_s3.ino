@@ -4,6 +4,9 @@
 #define SCREEN_WIDTH 130
 #define SCREEN_HEIGHT 240
 
+// 音频缓冲区配置
+#define AUDIO_BUFFER_SIZE 256
+
 enum Status {
   STATUS_IDLE = 0,
   STATUS_LISTENING = 1
@@ -23,6 +26,9 @@ const uint16_t statusColors[] = {
 unsigned long lastBlinkTime = 0;
 const unsigned long blinkInterval = 500;
 bool dotVisible = true;
+
+// 音频缓冲区
+int16_t audioBuffer[AUDIO_BUFFER_SIZE];
 
 // Claude Code Logo 24x24 - 完全对称版本
 const uint16_t claudeLogo[24][24] = {
@@ -60,8 +66,15 @@ void setup() {
   M5.Display.setTextColor(0xFFFF);
   M5.Power.begin();
 
-  drawUI();
   Serial.begin(115200);
+
+  // 初始化麦克风 - 必须先关闭扬声器
+  M5.Speaker.end();
+  M5.Mic.begin();
+
+  Serial.println("Mic initialized");
+
+  drawUI();
 }
 
 void loop() {
@@ -72,6 +85,11 @@ void loop() {
     if (currentStatus != STATUS_LISTENING) {
       currentStatus = STATUS_LISTENING;
       drawStatusText();
+    }
+
+    // 使用 M5.Mic 读取音频数据并通过串口发送
+    if (M5.Mic.record((uint8_t*)audioBuffer, AUDIO_BUFFER_SIZE * sizeof(int16_t))) {
+      Serial.write((uint8_t*)audioBuffer, AUDIO_BUFFER_SIZE * sizeof(int16_t));
     }
   } else {
     if (currentStatus != STATUS_IDLE) {
