@@ -1,0 +1,40 @@
+/*
+ * M5 StickS3 Voice Assistant - Configuration File Example
+ *
+ * Instructions:
+ * 1. Copy this file to config.h:
+ *    cp config.h.example config.h
+ * 2. Modify the WiFi and WebSocket configuration below
+ * 3. Save and compile to upload
+ *
+ * Note: config.h contains sensitive data (WiFi password, IP addresses).
+ *       DO NOT commit config.h to version control!
+ *       This example file (config.h.example) is safe to share.
+ */
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// ==================== WiFi Configuration ====================
+// Replace with your WiFi network name
+#define WIFI_SSID      "YourWiFiName"
+// Replace with your WiFi password
+#define WIFI_PASSWORD  "YourWiFiPassword"
+
+// ==================== WebSocket Configuration ====================
+// Replace with your PC's local IP address
+// Windows: Run 'ipconfig' in Command Prompt
+// macOS/Linux: Run 'ifconfig' in Terminal
+#define WEBSOCKET_HOST "192.168.x.x"  // PC IP address
+#define WEBSOCKET_PORT 8080           // WebSocket port
+#define WEBSOCKET_PATH "/audio"       // WebSocket path
+
+// ==================== Audio Configuration ====================
+#define AUDIO_BUFFER_SIZE 1024        // Audio buffer size (samples)
+#define SAMPLE_RATE 16000             // Sample rate (Hz)
+#define OPUS_FRAME_DURATION_MS 60     // Frame duration (ms)
+
+// ==================== Other Configuration ====================
+#define SERIAL_BAUD_RATE 115200       // Serial baud rate
+
+#endif // CONFIG_H

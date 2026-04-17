@@ -20,3 +20,10 @@ dist/
 
 # Serial logs
 *.log
+
+# Configuration file with sensitive data (optional override)
+config_local.h
+config.h
+
+# Claude Code configuration
+.claude/
