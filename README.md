@@ -1,90 +1,102 @@
-# M5 StickS3 Voice Assistant - WiFi Audio Streaming
+# Stick S3 - AI Vibe Coding Voice Assistant
 
-M5 StickS3 voice assistant with real-time audio streaming to PC via WiFi WebSocket for speech recognition processing.
+Stick S3 is an AI Vibe Coding assistant that enables voice input to any AI terminal using the M5 StickS3 hardware. Speak naturally to AI coding assistants like Claude, ChatGPT, and more - hands-free coding efficiency.
 
-## Features
+## Project Architecture
 
-- ✅ 16kHz 16-bit high-quality audio capture
-- ✅ WiFi WebSocket real-time transmission (~32KB/s)
-- ✅ Auto-reconnect on disconnection
-- ✅ Visual UI display (status, battery, WiFi signal)
-- ✅ Push-to-Talk button (Button A)
-- ✅ Real-time speech-to-text with Whisper AI
-- ✅ No local audio file storage - instant transcription
+This project consists of three parts:
 
-## Hardware Requirements
+```
+┌─────────────────┐     WiFi WebSocket     ┌─────────────────┐
+│   M5 StickS3    │ ──────────────────────▶ │  Python Backend │
+│   (Hardware)    │                        │   (PC/Mac)      │
+│                 │                        │                 │
+│ • Voice capture │                        │ • WebSocket srv │
+│ • Button control│                        │ • Whisper AI    │
+│ • WiFi transfer │                        │ • Speech-to-text│
+└─────────────────┘                        └─────────────────┘
+                                                    │
+                                                    ▼
+                                         ┌─────────────────┐
+                                         │  AI Terminal    │
+                                         │ (Claude/VSCode) │
+                                         └─────────────────┘
+```
+
+### 1. Stick S3 Hardware
+
+- **MCU**: M5 StickS3 (ESP32-S3)
+- **Audio**: Built-in I2S microphone, 16kHz 16-bit high-quality recording
+- **Display**: 0.96" color screen showing status, WiFi signal, battery
+- **Control**: Button A for Push-to-Talk recording
+- **Network**: 2.4GHz WiFi, real-time WebSocket transmission
+
+### 2. Python Backend
+
+- **WebSocket Server**: Receives audio stream
+- **Whisper AI**: Speech recognition using faster-whisper
+- **Real-time Transcription**: No audio file storage needed
+
+### 3. Workflow
+
+1. User presses and holds Button A on Stick S3
+2. Audio streams to PC via WiFi WebSocket
+3. Python backend transcribes audio using Whisper AI
+4. Transcribed text outputs to terminal, ready to paste into AI chat
+
+## Hardware Setup
+
+### Requirements
 
 - M5 StickS3 development board
 - USB-C data cable
 - 2.4GHz WiFi network
 
-## Software Requirements
+### Flashing Steps
 
-### StickS3 End (Arduino)
-- Arduino IDE 2.0+ / arduino-cli
-- M5Unified library
-- WebSockets library (by Markus Sattler)
-- ESP32 board support
+#### 1. Install Arduino Environment
 
-### PC End (Python)
-- Python 3.8+
-- websockets
-- faster-whisper
-- Whisper AI model (base/small/medium/large-v3)
+**Option A: Arduino IDE**
 
-## Technology Stack
-
-### Embedded (StickS3)
-| Component | Technology |
-|-----------|------------|
-| Framework | Arduino (ESP32-S3) |
-| Audio Capture | M5Unified I2S Microphone |
-| Network | WiFi 802.11 b/g/n (2.4GHz) |
-| Protocol | WebSocket (Binary) |
-| Audio Format | 16kHz 16-bit PCM Mono |
-
-### Server (PC)
-| Component | Technology |
-|-----------|------------|
-| Language | Python 3.14+ |
-| WebSocket Server | websockets (asyncio) |
-| Speech Recognition | faster-whisper |
-| AI Model | OpenAI Whisper (via HuggingFace) |
-| Audio Processing | wave, tempfile |
-
-### AI Models Available
-| Model | Size | Accuracy | Speed |
-|-------|------|----------|-------|
-| base | 141MB | ⭐⭐⭐ | Fast |
-| small | 464MB | ⭐⭐⭐⭐ | Medium |
-| medium | 1.5GB | ⭐⭐⭐⭐⭐ | Slow |
-| large-v3 | 3GB | ⭐⭐⭐⭐⭐⭐ | Slowest |
-
-## Installation Steps
-
-### 1. Arduino Environment Setup
-
-1. Install M5Unified library:
-   - Arduino IDE → Tools → Manage Libraries → Search "M5Unified" → Install
-
-2. Install WebSockets library:
-   - Arduino IDE → Tools → Manage Libraries → Search "WebSockets" → Install (by Markus Sattler)
-
-3. Install ESP32 board support:
-   - Arduino IDE → Preferences → Additional Boards Manager URLs
+1. Download and install [Arduino IDE 2.0+](https://www.arduino.cc/en/software)
+2. Add ESP32 board support:
+   - File → Preferences → Additional Boards Manager URLs
    - Add: `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
    - Tools → Board → Boards Manager → Search "ESP32" → Install
+3. Install libraries:
+   - Tools → Manage Libraries → Search "M5Unified" → Install
+   - Tools → Manage Libraries → Search "WebSockets" → Install (by Markus Sattler)
 
-### 2. Configure WiFi and Server Address
+**Option B: arduino-cli**
 
-1. Copy the example configuration file:
+```bash
+# Install arduino-cli
+brew install arduino-cli  # macOS
+# Or follow official docs: https://arduino.github.io/arduino-cli/latest/installation/
 
+# Initialize config
+arduino-cli config init
+
+# Add ESP32 board URL
+arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+
+# Install M5StickS3 core
+arduino-cli core install m5stack:esp32
+
+# Install libraries
+arduino-cli lib install M5Unified
+arduino-cli lib install "WebSockets"
+```
+
+#### 2. Configure WiFi and Server Address
+
+1. Copy the configuration file:
    ```bash
+   cd Arduino/sticks3-voice-assistant
    cp config.h.example config.h
    ```
 
-2. Edit `config.h` in the project directory:
-
+2. Edit `config.h`:
    ```cpp
    // WiFi Configuration
    #define WIFI_SSID      "Your WiFi Name"
@@ -96,63 +108,81 @@ M5 StickS3 voice assistant with real-time audio streaming to PC via WiFi WebSock
    ```
 
 3. Get your PC's IP address:
+   ```bash
+   # macOS/Linux
+   ifconfig
 
-   **Windows:**
-   ```cmd
+   # Windows
    ipconfig
    ```
 
-   **macOS/Linux:**
-   ```bash
-   ifconfig
-   ```
+#### 3. Compile and Upload
 
-   Find your local IP address (usually `192.168.x.x`).
+**Using Arduino IDE:**
+1. Open `sticks3-voice-assistant.ino`
+2. Select board: **M5Stick-S3**
+3. Select correct serial port
+4. Click upload button
 
-> **⚠️ Security Note:** `config.h` contains sensitive data (WiFi password, IP addresses).
-> This file is already in `.gitignore` and should NOT be committed to version control.
-> The example file `config.h.example` is safe to share and can be used as a template.
-
-### 3. Install PC Python Dependencies
-
+**Using arduino-cli:**
 ```bash
-cd pc_receiver
-pip install websockets faster-whisper
-```
+# List available ports
+arduino-cli board list
 
-### 4. Configure WiFi and Server Address
-
-### 5. Compile and Upload
-
-Using arduino-cli:
-```bash
+# Compile and upload (replace /dev/cu.usbmodemXXX with your actual port)
 arduino-cli compile --fqbn m5stack:esp32:m5stack_sticks3
 arduino-cli upload -p /dev/cu.usbmodemXXX --fqbn m5stack:esp32:m5stack_sticks3
 ```
 
-Or using Arduino IDE:
-1. Select board: **M5Stick-S3**
-2. Select correct serial port
-3. Click upload button
+## Python Backend Deployment
 
-### 6. Start PC Server and Test
+### 1. Install Dependencies
 
 ```bash
 cd pc_receiver
-source venv/bin/activate  # If using virtualenv
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
+# or venv\Scripts\activate  # Windows
+
+# Install dependencies
+pip install websockets faster-whisper
+```
+
+### 2. Configure WiFi Settings
+
+Edit `pc_receiver/wifi_audio_receiver.py` if needed:
+
+```python
+# Modify listen address or port
+HOST = "0.0.0.0"  # Listen on all interfaces
+PORT = 8080       # WebSocket port
+```
+
+### 3. Start the Server
+
+```bash
 python wifi_audio_receiver.py
 ```
 
-**Usage:**
-1. StickS3 auto-connects to WiFi and WebSocket
+First run will automatically download the Whisper AI model (~500MB). Available models:
+- `base`: 141MB, fast
+- `small`: 464MB, balanced (default)
+- `medium`: 1.5GB, high accuracy
+- `large-v3`: 3GB, highest accuracy
+
+### 4. Usage
+
+1. Stick S3 auto-connects to WiFi and WebSocket
 2. Screen displays connection status
 3. **Press and hold Button A** to start recording
 4. **Release Button A** to stop and transcribe
-5. PC outputs transcribed text instantly
+5. Terminal outputs transcribed text instantly
 
 ## Expected Output
 
-### StickS3 Serial Output:
+### Stick S3 Serial Output:
 ```
 === M5 StickS3 WiFi Audio Stream ===
 Mic initialized
@@ -170,23 +200,20 @@ Setup complete
 [Button A] Stopped streaming
 ```
 
-### PC Output:
+### PC Terminal Output:
 ```
 🧠 Loading Whisper model 'small'...
 ✅ Model loaded successfully!
 
 ============================================================
-🎙️  M5 StickS3 WiFi Audio Receiver - Push to Talk
+🎙️  Stick S3 WiFi Audio Receiver - Push to Talk
 ============================================================
 📡 Listening on: ws://0.0.0.0:8080
 
 ✅ Client connected: ('192.168.x.x', xxxxx)
 🎤 Recording...
 🎤 Processing...
-📝 您好，我在说话，您能听到我说话吗？
-🎤 Recording...
-🎤 Processing...
-📝 今天天气不错
+📝 Hello, I am speaking, can you hear me?
 ```
 
 ## Screen UI
@@ -211,15 +238,19 @@ Setup complete
 | Listening | "Listening" | Blue | Connected, waiting |
 | Streaming | "Streaming" | Red | Recording audio |
 
-## Communication Protocol
+## Technical Specifications
 
-### WebSocket Messages
-
-| Direction | Type | Content | Description |
-|-----------|------|---------|-------------|
-| StickS3 → PC | TEXT | `"START_RECORDING"` | Begin recording session |
-| StickS3 → PC | BIN | Audio data (PCM) | Raw audio samples |
-| StickS3 → PC | TEXT | `"STOP_RECORDING"` | End recording, trigger transcription |
+| Parameter | Value |
+|-----------|-------|
+| Sample Rate | 16kHz |
+| Bit Depth | 16-bit |
+| Channels | Mono |
+| Frame Duration | 60ms |
+| Buffer Size | 1024 samples |
+| Bitrate | ~256kbps (32KB/s) |
+| WiFi | 2.4GHz 802.11 b/g/n |
+| Protocol | WebSocket binary frames |
+| Supported Languages | Chinese, English, 90+ languages |
 
 ## Troubleshooting
 
@@ -231,7 +262,7 @@ Setup complete
 ### WebSocket Connection Failed
 - Check PC firewall allows port 8080
 - Verify PC IP address is correct
-- Ensure PC receiver server is running
+- Ensure Python server is running
 
 ### Poor Audio Quality
 - Check WiFi signal strength (RSSI > -70dBm recommended)
@@ -242,19 +273,16 @@ Setup complete
 - WiFi transmission consumes more power, this is normal
 - Can connect to USB power for extended use
 
-### Audio Plays Too Fast/Slow
-- Adjust `SAMPLE_RATE` in `pc_receiver/wifi_audio_receiver.py`
-- M5 StickS3 actual sample rate may vary (default ~15kHz)
-
 ## Project Structure
 
 ```
 sticks3-voice-assistant/
-├── config.h.example              # Example configuration file (safe to share)
-├── config.h                      # Configuration file (WiFi, WebSocket) - DO NOT COMMIT
+├── config.h.example              # Example configuration (safe to share)
+├── config.h                      # Configuration (WiFi, password) - DO NOT COMMIT
 ├── sticks3-voice-assistant.ino   # Arduino main program
 ├── pc_receiver/
-│   └── wifi_audio_receiver.py    # PC receiver server
+│   ├── wifi_audio_receiver.py    # WebSocket server
+│   └── transcribe.py             # Whisper transcription module
 ├── openspec/
 │   └── changes/
 │       ├── sticks3-voice-assistant/
@@ -263,31 +291,13 @@ sticks3-voice-assistant/
 └── .gitignore
 ```
 
-## Technical Specifications
-
-| Parameter | Value |
-|-----------|-------|
-| Sample Rate | 16kHz (configurable) |
-| Bit Depth | 16-bit |
-| Channels | Mono |
-| Frame Duration | 60ms |
-| Buffer Size | 1024 samples |
-| Bitrate | ~256kbps (32KB/s) |
-| WiFi | 2.4GHz 802.11 b/g/n |
-| WebSocket | Binary frames |
-| Protocol | Push-to-Talk (START/STOP) |
-| Speech Recognition | Whisper AI (fine-tuned) |
-| Supported Languages | Chinese (zh), English (en), etc. |
-
 ## References
 
-- [Xiaozhi Voice Assistant GitHub](https://github.com/78/xiaozhi-esp32)
 - [M5Unified Documentation](https://github.com/m5stack/M5Unified)
 - [WebSockets Library](https://github.com/Links2004/arduinoWebSockets)
 - [M5 StickS3 Documentation](https://docs.m5stack.com/en/core/StickS3)
-- [faster-whisper GitHub](https://github.com/SYSTRAN/faster-whisper)
+- [faster-whisper](https://github.com/SYSTRAN/faster-whisper)
 - [OpenAI Whisper](https://github.com/openai/whisper)
-- [HuggingFace Model Hub](https://huggingface.co/Systran)
 
 ## License
 
