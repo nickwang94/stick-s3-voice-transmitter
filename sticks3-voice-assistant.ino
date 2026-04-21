@@ -102,14 +102,13 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
     case WStype_DISCONNECTED:
       Serial.println("[WebSocket] Disconnected");
       websocketConnected = false;
-      M5.Display.setTextColor(0xFFFF);
-      M5.Display.setCursor(0, 200);
-      M5.Display.println("WS disconnected");
+      drawWebSocketStatus();
       break;
 
     case WStype_CONNECTED:
       Serial.println("[WebSocket] Connected");
       websocketConnected = true;
+      drawWebSocketStatus();
       break;
 
     case WStype_TEXT:
@@ -210,6 +209,7 @@ void drawUI() {
   drawLogo((SCREEN_WIDTH - LOGO_SIZE) / 2, 50, LOGO_SIZE);
   drawStatusText();
   drawWiFiStatus();
+  drawWebSocketStatus();
   drawBattery();
 }
 
@@ -246,10 +246,37 @@ void drawStatusText() {
 }
 
 void drawWiFiStatus() {
-  // WiFi status indicator - top left (simple dot)
+  // WiFi status indicator - left side, first row
   // Green dot = connected, Red dot = not connected
   uint16_t color = wifiConnected ? 0x07E0 : 0xF800;
   M5.Display.fillCircle(12, 12, 6, color);
+
+  // WiFi label
+  M5.Display.setTextSize(1);
+  M5.Display.setTextColor(color);
+  M5.Display.setCursor(24, 10);
+  M5.Display.print("WiFi");
+}
+
+void drawWebSocketStatus() {
+  // WebSocket status indicator - left side, second row (aligned with WiFi)
+  // Green = connected, Red = disconnected, Yellow = connecting
+  uint16_t color;
+  if (websocketConnected) {
+    color = 0x07E0;  // Green - connected
+  } else if (currentStatus == STATUS_CONNECTING) {
+    color = 0xFFE0;  // Yellow - connecting
+  } else {
+    color = 0xF800;  // Red - disconnected
+  }
+
+  M5.Display.fillCircle(12, 32, 6, color);
+
+  // WS label
+  M5.Display.setTextSize(1);
+  M5.Display.setTextColor(color);
+  M5.Display.setCursor(24, 30);
+  M5.Display.print("WS");
 }
 
 void drawBattery() {
@@ -413,6 +440,29 @@ void loop() {
 
       Serial.println("[Button A] Stopped streaming");
     }
+  }
+
+  // Button B - Reconnect WebSocket
+  if (M5.BtnB.isPressed()) {
+    if (!websocketConnected || !wifiConnected) {
+      Serial.println("[Button B] Reconnecting...");
+
+      // Reconnect WiFi if needed
+      if (!wifiConnected || WiFi.status() != WL_CONNECTED) {
+        Serial.println("[Button B] Reconnecting WiFi...");
+        initWiFi();
+      }
+
+      // Reconnect WebSocket if WiFi is connected
+      if (wifiConnected) {
+        Serial.println("[Button B] Reconnecting WebSocket...");
+        webSocket.disconnect();
+        delay(100);
+        initWebSocket();
+      }
+      drawWebSocketStatus();
+    }
+    delay(200);  // Debounce
   }
 
   // Check WiFi reconnection status
