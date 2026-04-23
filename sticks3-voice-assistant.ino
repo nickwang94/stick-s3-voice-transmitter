@@ -442,25 +442,11 @@ void loop() {
     }
   }
 
-  // Button B - Reconnect WebSocket
-  if (M5.BtnB.isPressed()) {
-    if (!websocketConnected || !wifiConnected) {
-      Serial.println("[Button B] Reconnecting...");
-
-      // Reconnect WiFi if needed
-      if (!wifiConnected || WiFi.status() != WL_CONNECTED) {
-        Serial.println("[Button B] Reconnecting WiFi...");
-        initWiFi();
-      }
-
-      // Reconnect WebSocket if WiFi is connected
-      if (wifiConnected) {
-        Serial.println("[Button B] Reconnecting WebSocket...");
-        webSocket.disconnect();
-        delay(100);
-        initWebSocket();
-      }
-      drawWebSocketStatus();
+  // Button B - Send Enter key
+  if (M5.BtnB.wasPressed()) {
+    if (websocketConnected) {
+      Serial.println("[Button B] Sending Enter key");
+      webSocket.sendTXT("PRESS_ENTER");
     }
     delay(200);  // Debounce
   }

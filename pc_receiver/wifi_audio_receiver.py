@@ -10,7 +10,7 @@ Protocol:
     - Server transcribes and outputs text
 
 Dependencies:
-    pip install websockets asyncio faster-whisper
+    pip install websockets asyncio faster-whisper pynput
 
 Usage:
     python wifi_audio_receiver.py
@@ -21,9 +21,11 @@ import websockets
 import wave
 import sys
 import os
+import time
 import tempfile
 from datetime import datetime
 from faster_whisper import WhisperModel
+from pynput.keyboard import Controller as KeyboardController, Key
 
 # Audio parameters (must match StickS3 configuration)
 SAMPLE_RATE = 15000  # Sample rate 15kHz
@@ -37,6 +39,13 @@ PORT = 8080       # WebSocket port
 # Speech recognition model
 WHISPER_MODEL = "small"
 LANGUAGE = "zh"  # Chinese
+
+# Auto-type configuration
+AUTO_TYPE_ENABLED = True  # Set to True to enable auto-typing
+AUTO_TYPE_DELAY = 0.05  # Delay between keystrokes (seconds)
+
+# Global keyboard controller
+keyboard = KeyboardController()
 
 
 class AudioBuffer:
@@ -109,6 +118,18 @@ def transcribe_audio(audio_data: bytes, model) -> str:
             os.unlink(temp_path)
 
 
+def auto_type_text(text: str):
+    """Type text using virtual keyboard"""
+    if not AUTO_TYPE_ENABLED:
+        return
+
+    print(f"⌨️  Auto-typing: {text}")
+    # Type character by character with delay
+    for char in text:
+        keyboard.type(char)
+        time.sleep(AUTO_TYPE_DELAY)
+
+
 async def handle_client(websocket, model):
     """Handle client connection with push-to-talk protocol"""
     print(f"✅ Client connected: {websocket.remote_address}")
@@ -131,6 +152,12 @@ async def handle_client(websocket, model):
                     is_recording = True
                     buffer.start()
 
+                elif message == "PRESS_ENTER":
+                    # Press Enter key
+                    print("⌨️  Pressing Enter")
+                    keyboard.press(Key.enter)
+                    keyboard.release(Key.enter)
+
                 elif message == "STOP_RECORDING":
                     is_recording = False
                     buffer.stop()
@@ -141,6 +168,8 @@ async def handle_client(websocket, model):
                         text = transcribe_audio(buffer.get_audio(), model)
                         if text:
                             print(f"📝 {text}")
+                            # Auto-type if enabled
+                            auto_type_text(text)
                         else:
                             print("⚠️  No speech detected")
                     else:
@@ -185,6 +214,13 @@ async def main():
     print("  3. Send 'STOP_RECORDING' when button released")
     print("  4. Server transcribes and outputs text")
     print()
+    print("Auto-Type Configuration:")
+    print(f"   Enabled: {AUTO_TYPE_ENABLED}")
+    print(f"   Keystroke Delay: {AUTO_TYPE_DELAY*1000:.0f}ms")
+    print()
+    if AUTO_TYPE_ENABLED:
+        print("⚠️  Auto-type is ENABLED - text will be typed to active window!")
+        print()
 
     try:
         async with websockets.serve(lambda ws: handle_client(ws, model), HOST, PORT):
